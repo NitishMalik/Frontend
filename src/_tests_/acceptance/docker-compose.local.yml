@@ -1,0 +1,78 @@
+version: '2.4'
+services:
+  hub:
+    image: selenium/hub:3.141.59-copernicium
+    volumes:
+      - /dev/shm:/dev/shm
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:4444/grid/api/proxy"] 
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  firefox:
+    image: selenium/node-firefox:3.141.59-copernicium
+    volumes:
+      - /dev/shm:/dev/shm
+    depends_on:
+      hub:
+        condition: service_healthy
+    environment:
+      HUB_HOST: hub
+      HUB_PORT: 4444
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:5555"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  chrome:
+    image: selenium/node-chrome:3.141.59-copernicium
+    volumes:
+      - /dev/shm:/dev/shm
+    depends_on:
+      hub:
+        condition: service_healthy
+    environment:
+      HUB_HOST: hub
+      HUB_PORT: 4444
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:5555"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  acceptance:
+    build: .
+    depends_on:
+      chrome:
+        condition: service_healthy
+      firefox:
+        condition: service_healthy
+      website:
+        condition: service_healthy
+      hub:
+        condition: service_healthy
+    environment:
+       BASE_URL: http://website:3000/
+    volumes:
+      - ./reports:/app/reports
+    command: yarn start
+    
+  website:
+    build: 
+      context: ../../app/.
+      dockerfile: Dockerfile.webapp.acceptance
+    container_name: website
+    ports:
+      - 3000:3000
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000"]
+      interval: 5s
+      start_period: 30s
+      timeout: 5s
+      retries: 3
+    command: yarn start

@@ -1,0 +1,26 @@
+.page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.ui.card.content {
+    flex-grow: 1;
+    padding: 1rem;
+}
+
+.options-form {
+    display: flex;
+    align-items: flex-end;
+}
+
+.gateway-selector,
+.device-selector {
+    margin-right: 1rem;
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 58px;
+    width: 100vw;
+}

@@ -1,0 +1,10 @@
+<package>
+  <metadata>
+    <id>Honeywell.bootcamp_trainers.forge-bootcamp-sampleapp.deploy</id>
+    <version>$version$</version>
+    <authors>[email]</authors>
+    <owners>[email]</owners>
+    <description>React Application deployment scripts</description>
+    <tags>React Application Deploy</tags>
+  </metadata>
+</package>

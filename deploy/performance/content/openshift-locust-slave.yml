@@ -1,0 +1,68 @@
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: #{openshiftApplication}-performance
+    name: locust-slave
+  name: locust-slave
+spec:
+  replicas: 1
+  selector:
+    app: #{openshiftApplication}-performance
+    name: locust-slave
+    deploymentconfig: locust-slave
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: #{openshiftApplication}-performance
+        deploymentconfig: locust-slave
+        name: locust-slave
+    spec:
+      containers:
+        - name: performance-test
+          image: #{artifactoryDeployServer}/#{deployImageName}-performance:#{deployImageTag}
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - ls
+                - /home/locust/test/locustfile.py
+          envFrom:
+          - secretRef:
+              name: "#{openshiftApplication}-performance"
+          env:
+            - name: HOME
+              value: /home/locust
+            - name: LOCUST_MODE
+              value: slave
+            - name: LOCUSTFILE_PATH
+              value: "/home/locust/test/locustfile.py"
+            - name: LOCUST_MASTER_HOST
+              value:  #{openshiftApplication}-performance-svc
+            - name: LOCUST_MASTER_PORT
+              value: "5557"
+            - name: TARGET_URL
+              value: #{openShiftAppUrl}   
+            - name: LOCUST_OPTS
+              value: --no-web #{locust_additionalparameters}
+            - name: PERFORMANCE_TEST_API_ENDPOINT
+              value: #{performanceTestApiEndPoint}
+            - name: PIPELINE_KEY
+              value: #{pipelineKey}
+            - name: OFFERING_KEY
+              value: #{offeringKey}
+            - name: ENVIRONMENT
+              value: #{Octopus.Environment.Name}
+            - name: COMMIT_ID
+              value: #{Octopus.Deployment.PackageBuildMetadata[0].VcsCommitNumber}
+            - name: COMMIT_TEST_INSTANCE
+              value: #{Octopus.Deployment.Id}
+            - name: RELEASE_NUMBER
+              value: #{Octopus.Release.Number}
+  test: false
+  triggers:
+    - type: configChange
+    - type: ConfigChange

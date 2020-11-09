@@ -1,0 +1,112 @@
+---
+  kind: Secret
+  apiVersion: v1
+  stringData: 
+    PERFORMANCE_TEST_USER_CLIENT_SECRET: #{performanceTestUserClientSecret}
+    PERFORMANCE_TEST_USER_CLIENT_ID: #{performanceTestUserClientId}
+  metadata:
+    name: #{openshiftApplication}-performance
+    labels:
+      app: #{openshiftApplication}-performance
+      name: locust-master
+  type: Opaque
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: #{openshiftApplication}-performance
+    name: locust-master
+  name: locust-master
+spec:
+  replicas: 1
+  selector:
+    app: #{openshiftApplication}-performance
+    name: locust-master
+    deploymentconfig: locust-master
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: #{openshiftApplication}-performance
+        deploymentconfig: locust-master
+        name: locust-master
+    spec:
+      containers:
+        - name: performance-test
+          image: #{artifactoryDeployServer}/#{deployImageName}-performance:#{deployImageTag}
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - ls
+                - /home/locust/test/locustfile.py
+          ports:
+            - containerPort: 8089
+              name: loc-master-web
+              protocol: TCP
+            - containerPort: 5557
+              name: loc-master-p1
+              protocol: TCP
+            - containerPort: 5558
+              name: loc-master-p2
+              protocol: TCP
+          envFrom:
+          - secretRef:
+              name: "#{openshiftApplication}-performance"
+          env:
+            - name: HOME
+              value: /home/locust
+            - name: LOCUST_MODE
+              value: master
+            - name: LOCUSTFILE_PATH
+              value: "/home/locust/test/locustfile.py"
+            - name: TARGET_URL
+              value: #{openShiftAppUrl}
+            - name: LOCUST_OPTS
+              value: --no-web --expect-slaves=#{locust_noOfslaves} -c #{locust_noOfclients} -r #{locust_clientspawnrate} --run-time=#{locust_performancetestduration} --csv=/home/locust/test/result --logfile=/home/locust/test/locusttest.log #{locust_additionalparameters}
+            - name: PERFORMANCE_TEST_API_ENDPOINT
+              value: #{performanceTestApiEndPoint}
+            - name: PIPELINE_KEY
+              value: #{pipelineKey}
+            - name: OFFERING_KEY
+              value: #{offeringKey}
+            - name: ENVIRONMENT
+              value: #{Octopus.Environment.Name}
+            - name: COMMIT_ID
+              value: #{Octopus.Deployment.PackageBuildMetadata[0].VcsCommitNumber}
+            - name: COMMIT_TEST_INSTANCE
+              value: #{Octopus.Deployment.Id}
+            - name: RELEASE_NUMBER
+              value: #{Octopus.Release.Number}
+
+  test: false
+  triggers:
+    - type: configChange
+    - type: ConfigChange
+
+---
+    kind: Service
+    apiVersion: v1
+    metadata:
+      name: #{openshiftApplication}-performance-svc
+      labels:
+        app: #{openshiftApplication}-performance
+        name: #{openshiftApplication}-performance-svc
+    spec:
+      ports:
+        -  name: 8089-tcp
+           port: 8089
+           protocol: TCP
+           targetPort: 8089
+        - name: 5557-tcp
+          port: 5557
+          protocol: TCP
+          targetPort: 5557         
+      type: ClusterIP
+      selector: 
+        app: #{openshiftApplication}-performance
+        deploymentconfig: locust-master
+        name: locust-master
+

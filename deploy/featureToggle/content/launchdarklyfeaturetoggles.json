@@ -1,0 +1,8 @@
+[
+  {
+    "name": "dev-SENT2-8060-DeleteTodoLaunchDarklyIntegrationReact",
+    "description": "Delete flag test for launch darkly integration with react app",
+    "isTemporary": true,
+    "isClientIDEnabled": true
+  }
+]

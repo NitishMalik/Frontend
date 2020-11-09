@@ -1,0 +1,23 @@
+{
+  "name": "react-app-acceptance-suite",
+  "version": "1.0.0",
+  "description": "This runs the acceptance tests specified for the given ReactJS web application",
+  "main": "index.js",
+  "scripts": {
+    "start": "wdio wdio.conf.js",
+    "selenium": "selenium-standalone start"
+  },
+  "author": "",
+  "license": "COPYRIGHT 2018 HONEYWELL INTERNATIONAL SARL",
+  "dependencies": {
+    "assert": "^1.4.1",
+    "cucumber": "^5.0.2",
+    "cucumber-pretty": "^1.4.4",
+    "request": "^2.88.0",
+    "selenium-standalone": "^6.15.3",
+    "wdio-cucumber-framework": "^2.2.8",
+    "wdio-junit-reporter": "^0.4.4",
+    "wdio-spec-reporter": "^0.1.5",
+    "webdriverio": "^4.14.0"
+  }
+}

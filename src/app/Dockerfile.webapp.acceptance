@@ -1,0 +1,7 @@
+FROM node:9.11.1-alpine
+EXPOSE 3000
+WORKDIR /app
+COPY .npmrc* package.json* yarn.lock* ./
+RUN yarn install
+COPY . .
+CMD ["yarn","start"]

@@ -1,0 +1,23 @@
+node_modules
+node_modules/
+**/BuildArtifacts/*
+lib/
+/.scannerwork/
+dockerbuild.ps1
+docker_logs.txt
+build.ps1
+/tools/
+*.tgz
+yarn-error.log
+.DS_Store
+/build/*
+errorShots
+src/_tests_/acceptance/reports
+
+# apphosting deploy scripts
+deploy/**/apphosting.ps1
+deploy/**/ce.devops.apphosting.scripts
+
+#Feature toggle deploy scripts
+deploy/featureToggle/content/featureToggleSync.ps1
+deploy/featureToggle/content/packages.config

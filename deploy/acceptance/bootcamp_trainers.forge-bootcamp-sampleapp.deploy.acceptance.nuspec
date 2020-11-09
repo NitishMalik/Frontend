@@ -1,0 +1,10 @@
+<package>
+  <metadata>
+    <id>Honeywell.bootcamp_trainers.forge-bootcamp-sampleapp.deploy.acceptance</id>
+    <version>$version$</version>
+    <authors>[email]</authors>
+    <owners>[email]</owners>
+    <description>React Application acceptance test scripts</description>
+    <tags>React Application Acceptance Test</tags>
+  </metadata>
+</package>

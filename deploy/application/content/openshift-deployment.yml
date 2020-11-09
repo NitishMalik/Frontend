@@ -1,0 +1,178 @@
+---
+  kind: ConfigMap
+  apiVersion: v1
+  data:
+    #{openshiftApplication}.properties: /
+      name=#{openshiftApplication}   
+    #{openshiftApplication}-env: #{openshiftApplication}  
+  metadata:
+    name: #{openshiftApplication}-config
+    labels:
+      app: #{openshiftApplication}
+      name: #{openshiftApplication}
+---
+  kind: Secret
+  apiVersion: v1
+  data:
+    #{openshiftApplication}-secret.json: ewogICJOYW1lIjogInN1cGVyc2VjcmV0Igp9
+  stringData: 
+    #{openshiftApplication}-secret-string: #{openshiftApplication}
+  metadata:
+    name: #{openshiftApplication}-secret
+    labels:
+      app: #{openshiftApplication}
+      name: #{openshiftApplication}
+  type: Opaque
+---
+  kind: ImageStream
+  apiVersion: v1
+  metadata:
+    generation: 1
+    name: #{openshiftApplication}
+    labels:
+      app: #{openshiftApplication}
+      name: #{openshiftApplication}
+  spec:
+    dockerImageRepository: #{artifactoryDeployServer}/#{deployImageTag}
+    lookupPolicy: null
+    local: false
+#---
+#apiVersion: v1
+#kind: PersistentVolumeClaim
+#metadata:
+#  name: #{openshiftApplication}-pvc
+#spec:
+# storageClassName: managed-lrs
+# accessModes:
+#  - ReadWriteOnce
+# resources:
+#   requests:
+#     storage: 1Gi
+---
+  kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: #{openshiftApplication}
+    labels:
+      app: #{openshiftApplication}
+      name: #{openshiftApplication}
+  spec:
+    replicas: 1
+    selector:
+      app: #{openshiftApplication}
+      deploymentconfig: #{openshiftApplication}
+    template:
+      metadata:
+        labels:
+          app: #{openshiftApplication}
+          deploymentconfig: #{openshiftApplication}
+      spec:
+        restartPolicy: Always
+        containers:
+        - name: #{openshiftApplication}
+          image: #{artifactoryDeployServer}/#{deployImageName}:#{deployImageTag}
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 3000
+          envFrom:
+          - configMapRef:
+              name: #{openshiftApplication}-config
+          - secretRef:
+              name: #{openshiftApplication}-secret
+          env:
+          - name: Name
+            value: #{openshiftApplication}
+          - name: LAUNCHDARKLYSDKKEY
+            value: #{LaunchDarklySdkKey}
+          - name: LAUNCHDARKLYMOBILEKEY
+            value: #{LaunchDarklyMobileKey}
+          - name: LAUNCHDARKLYCLIENTID
+            value: #{LaunchDarklyClientId}            
+          - name: LAUNCHDARKLYENVIRONMENTNAME
+            value: #{LaunchDarklyEnvironmentKey}
+          volumeMounts:
+          - name: #{openshiftApplication}-secret-volume
+            mountPath: "/etc/secret"
+          - name: #{openshiftApplication}-configmap-volume
+            mountPath: "/etc/config"
+#           - name: #{openshiftApplication}-pvc-volume
+#             mountPath: "/tmp/#{openshiftApplication}"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+          livenessProbe:
+            exec:
+              command:
+              - cat 
+              - /app/server.js
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+        volumes: 
+        - name: #{openshiftApplication}-secret-volume
+          secret:
+            secretName: #{openshiftApplication}-secret
+        - name: #{openshiftApplication}-configmap-volume
+          configMap:
+            name: #{openshiftApplication}-config
+#        - name: #{openshiftApplication}-pvc-volume
+#          persistentVolumeClaim:
+#            claimName: #{openshiftApplication}-pvc
+    triggers:
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+            - #{openshiftApplication}
+          from:
+            kind: ImageStreamTag
+            name: #{openshiftApplication}:latest
+        type: ImageChange 
+      - type: configChange  
+    strategy:
+      type: Rolling
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1 
+---
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: #{openshiftApplication}-svc
+    labels:
+      app: #{openshiftApplication}
+      name: #{openshiftApplication}-svc
+  spec:
+    ports:
+      -  name: 3000-tcp
+         port: 3000
+         protocol: TCP
+         targetPort: 3000
+    type: ClusterIP
+    selector: 
+      app: #{openshiftApplication}
+      deploymentconfig: #{openshiftApplication}
+---
+  kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      app: #{openshiftApplication}
+      name: #{openshiftApplication}
+    name: #{openshiftApplication}-route
+  spec: 
+   host: #{openShiftAppHost}
+   port:
+    sourcePort: 3000-tcp
+    targetPort: 3000-tcp
+   tls:
+    termination: edge          
+    insecureEdgeTerminationPolicy: Redirect
+   to:
+    kind: Service
+    name: #{openshiftApplication}-svc
+    weight: 100   
